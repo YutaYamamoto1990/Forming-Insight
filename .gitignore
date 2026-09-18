@@ -1,0 +1,25 @@
+# User-specific settings and analysis data
+/distribution/press-analysis-agent/config/*
+!/distribution/press-analysis-agent/config/.gitkeep
+/distribution/press-analysis-agent/workspace/input/*
+!/distribution/press-analysis-agent/workspace/input/.gitkeep
+/distribution/press-analysis-agent/workspace/work/*
+!/distribution/press-analysis-agent/workspace/work/.gitkeep
+/distribution/press-analysis-agent/workspace/output/*
+!/distribution/press-analysis-agent/workspace/output/.gitkeep
+
+# Credentials and local environments
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local editor / operating system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
