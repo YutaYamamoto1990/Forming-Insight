@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{TITLE}}</title>
+<style>
+:root{color-scheme:light;--ink:#183042;--muted:#526779;--line:#dbe3e9;--accent:#087e8b}
+*{box-sizing:border-box}body{margin:0;background:#e9eef1;color:var(--ink);font:13px/1.5 "Yu Gothic",Meiryo,sans-serif}
+main{max-width:900px;margin:16px auto;padding:22px 30px;background:white}header{border-bottom:2px solid var(--accent);padding:0 0 8px;position:relative}
+h1{font-size:23px;margin:0 0 4px}header p{margin:3px 0}.badge{font-size:12px;color:#745900}h2{font-size:15px;margin:10px 0 5px;padding-bottom:3px;border-bottom:1px solid var(--line)}
+section{margin:8px 0;padding:0}table{width:100%;border-collapse:collapse}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:3px 6px;overflow-wrap:anywhere}th{width:20%;color:var(--muted)}
+p{margin:4px 0;overflow-wrap:anywhere}ul{padding-left:20px;margin:5px 0}li{margin:3px 0}.figures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+figure{margin:0;padding:7px;border:1px solid var(--line);break-inside:avoid}figcaption{font-size:12px;font-weight:bold;margin:0 0 3px}img{display:block;width:100%;height:auto}figure p{font-size:11px;line-height:1.45;margin:3px 0}.label{font-weight:bold;color:var(--accent);margin-right:6px}.note,footer{font-size:11px;color:var(--muted)}.locations td{font-size:10px}footer{margin-top:10px;border-top:1px solid var(--line);padding-top:5px}
+@media screen and (max-width:550px){main{margin:0;padding:12px}body{font-size:12px}.figures{gap:5px}figure{padding:4px}figure p{font-size:10px}}
+@media print{@page{size:A4;margin:12mm}body{background:white;font-size:9pt;line-height:1.4}main{width:auto;max-width:none;margin:0;padding:0}h1{font-size:17pt}h2{font-size:11pt}section{margin:5px 0}th,td{padding:2px 5px}.figures{gap:3mm}figure{padding:2mm}figure p,figcaption{font-size:8pt}img{width:100%;height:59mm;object-fit:contain}.interpretation{break-before:page}section:not(.raw_results){break-inside:avoid}h2{break-after:avoid}.locations td{font-size:8pt}footer{font-size:8pt}}
+</style>
+</head><body><main>
+<header><h1>{{TITLE}}</h1><p>{{SUBTITLE}}</p><span class="badge">{{STATUS}}</span></header>
+{{CONTENT}}
+<footer>プレス解析レポート ／ 書式 第2版</footer>
+</main></body></html>

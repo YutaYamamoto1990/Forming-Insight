@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "description": "Shared Rhino 8 synchronous GH test flow",
+  "gh_definition": null,
+  "input_parameter": "Get File Path",
+  "output_parameter": "Tx",
+  "success_policy": "gh_response_received"
+}

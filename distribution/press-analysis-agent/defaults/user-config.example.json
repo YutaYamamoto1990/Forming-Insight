@@ -1,0 +1,11 @@
+{
+  "compute_url": "http://localhost:6500",
+  "timeout_seconds": 600,
+  "api_key_environment": null,
+  "execution_path_alias_root": null,
+  "processes": {
+    "process-test": {
+      "gh_definition": null
+    }
+  }
+}

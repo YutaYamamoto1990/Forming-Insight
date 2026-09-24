@@ -1,0 +1,15 @@
+{
+  "run_id": "実際のrun-id",
+  "title": "プレス解析レポート",
+  "subtitle": "入力名・解析プロセスを記載",
+  "status_label": "評価未実施",
+  "input": [{"name": "入力ファイル", "value": "実際の入力名", "evidence": ["E1"]}],
+  "conditions": [{"name": "解析条件", "value": "確認済みの値または未確認", "evidence": ["E1"]}],
+  "raw_results": [{"text": "確認した結果の事実を記載", "evidence": ["E1"]}],
+  "figures": [],
+  "interpretation": [{"text": "評価基準未整備のため良否は未評価", "evidence": ["E1"]}],
+  "recommendations": [],
+  "warnings": [{"text": "未確認条件と評価上の制約を記載", "evidence": ["E1"]}],
+  "evidence": [{"id": "E1", "label": "解析実行記録", "path": "exchange/run.json"}],
+  "conclusion": [{"text": "確認できた範囲と未評価の事項を記載", "evidence": ["E1"]}]
+}
