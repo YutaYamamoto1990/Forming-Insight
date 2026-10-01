@@ -1,12 +1,10 @@
 # User-specific settings and analysis data
 /distribution/press-analysis-agent/config/*
 !/distribution/press-analysis-agent/config/.gitkeep
-/distribution/press-analysis-agent/workspace/input/*
-!/distribution/press-analysis-agent/workspace/input/.gitkeep
-/distribution/press-analysis-agent/workspace/work/*
-!/distribution/press-analysis-agent/workspace/work/.gitkeep
-/distribution/press-analysis-agent/workspace/output/*
-!/distribution/press-analysis-agent/workspace/output/.gitkeep
+/distribution/press-analysis-agent/workspace/*
+!/distribution/press-analysis-agent/workspace/runs/
+/distribution/press-analysis-agent/workspace/runs/*
+!/distribution/press-analysis-agent/workspace/runs/.gitkeep
 
 # Credentials and local environments
 .env

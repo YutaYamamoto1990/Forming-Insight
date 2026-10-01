@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "description": "Shared Rhino 8 synchronous GH test flow",
+  "gh_definition": "processes/process-test/gh/process_test.gh",
+  "input_parameter": "Get File Path",
+  "output_parameter": "Tx",
+  "success_policy": "gh_response_received",
+  "postprocess": {
+    "cfile": "processes/process-test/post/original.cfile",
+    "expected_images": [
+      "image_000.png",
+      "image_001.png",
+      "image_002.png",
+      "image_003.png"
+    ]
+  }
+}

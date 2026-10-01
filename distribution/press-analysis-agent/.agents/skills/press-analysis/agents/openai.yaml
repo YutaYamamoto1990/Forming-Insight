@@ -1,0 +1,3 @@
+interface:
+  display_name: "プレス解析"
+  short_description: "kファイルからGH解析を実行し、完了応答とRaw結果の保存先を確認"
