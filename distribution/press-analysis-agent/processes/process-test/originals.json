@@ -1,0 +1,16 @@
+{
+  "snapshot_date": "2026-09-25",
+  "description": "Initial copy provenance; hashes describe this snapshot, not future user edits.",
+  "files": [
+    {
+      "path": "gh/process_test.gh",
+      "sha256": "64037fede98ecd246c84ed968068a317d74185205abfac03dc1a809f08a3b4bc",
+      "source_filename": "process_test-hidden.gh"
+    },
+    {
+      "path": "post/original.cfile",
+      "sha256": "ce892a830230752e0c882b3f45bbdd3f47d3a1233726367c1ef31f27644d2f1e",
+      "source_filename": "original.cfile"
+    }
+  ]
+}

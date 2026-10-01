@@ -1,0 +1,32 @@
+$# LS-PrePost command file created by LS-PrePost(R) V4.8.29 - 05Apr2022 -64bit-Window
+$# Created on Sep-25-2026 (13:46:25)
+openc d3plot "E:\Develop\260918_Lab_FormingInsight_process01\process_press-z\input_run_result1\d3plot"
+ac
+isometric x
+print png "E:\Develop\260918_Lab_FormingInsight_process01\process_press-z\input_run_result1\image_000_before.png" opaque enlisted "OGL1x1" 
+state -1;
+fringe 7
+pfringe
+-M 2
+-M 4
+-M 3
+range userdef 0.0768622 1;
++M 4
++M 3
++M 2
+pfringe 0
+pfringe
+pfringe 0
+print png "E:\Develop\260918_Lab_FormingInsight_process01\process_press-z\input_run_result1\image_000_after.png" opaque enlisted "OGL1x1" 
+-M 4
+-M 3
+-M 2
+pfringe
+print png "E:\Develop\260918_Lab_FormingInsight_process01\process_press-z\input_run_result1\image_000_after_plastic_strain.png" opaque enlisted "OGL1x1" 
+ac
+genselect target part
+genselect part add part 1/0 
+mtime 2 
+print png "E:\Develop\260918_Lab_FormingInsight_process01\process_press-z\input_run_result1\image_1.png" opaque enlisted "PlotWindow-1" 
+xyplot 1 donemenu
+deletewin 1

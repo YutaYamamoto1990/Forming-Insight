@@ -82,7 +82,9 @@ def render(run, data, output_name):
                 body += '<figure><figcaption>' + esc(figure['title']) + ' ' + refs(figure['evidence']) + '</figcaption><img src="' + uri + '" alt="' + esc(figure['title']) + '"><p><span class="label">表示条件</span>' + esc(figure['conditions']) + '</p><p><span class="label">観察</span>' + esc(figure['observation']) + '</p></figure>'
             body += '</div>'
         elif key == 'evidence':
-            locations = [('入力ファイル', manifest.get('source', '未記録')), ('解析結果', str(run / 'raw' / 'solver'))]
+            saved_input = run / 'input' / Path(manifest['source']).name if manifest.get('source') else None
+            input_location = str(saved_input) if saved_input and saved_input.is_file() else '保管済み入力ファイルを確認できません'
+            locations = [('入力ファイル（保管先）', input_location), ('解析結果', str(run / 'raw' / 'solver'))]
             body = '<table class="locations">' + ''.join('<tr><th>' + esc(label) + '</th><td>' + esc(path) + '</td></tr>' for label, path in locations) + '</table>'
         else:
             body = statements(data[key])

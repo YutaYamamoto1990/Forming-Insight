@@ -130,7 +130,8 @@ def execute(root, process_id, input_file, config_file, prepare_only=False):
         raise ValueError('Process definition escapes processes/')
     process = read_json(process_file)
     config = read_json(config_file)
-    timeout = config.get('timeout_seconds', 600)
+    settings = config.get('processes', {}).get(process_id, {})
+    timeout = settings.get('timeout_seconds', process.get('timeout_seconds', config.get('timeout_seconds', 600)))
     if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
         raise ValueError('timeout_seconds must be a positive number')
     url = config.get('compute_url', '').rstrip('/')
@@ -159,6 +160,33 @@ def execute(root, process_id, input_file, config_file, prepare_only=False):
     input_parameter = process['input_parameter']
     if not isinstance(input_parameter, str) or not input_parameter:
         raise ValueError('input_parameter is required')
+    layout = process.get('layout', {})
+    input_relative = layout.get('input_file', 'input.k')
+    result_relative = layout.get('result_directory', '.')
+    for relative in (input_relative, result_relative):
+        if Path(relative).is_absolute() or '..' in Path(relative).parts or ':' in relative:
+            raise ValueError('Layout paths must stay inside the execution root')
+    assets = []
+    destinations = {str(Path(input_relative)).lower()}
+    for item in process.get('assets', []):
+        relative = item['destination']
+        if Path(relative).is_absolute() or '..' in Path(relative).parts or ':' in relative or not relative:
+            raise ValueError('Asset destination must stay inside execution root')
+        if str(Path(relative)).lower() in destinations:
+            raise ValueError('Duplicate asset destination')
+        destinations.add(str(Path(relative)).lower())
+        supplied = settings.get('assets', {}).get(item['id']) or item.get('source')
+        if not supplied:
+            raise ValueError('Configure asset: ' + item['id'])
+        asset = (root / supplied).resolve(strict=True)
+        if not asset.is_file():
+            raise ValueError('Asset must be a file')
+        if any(line.lstrip().upper().startswith('*INCLUDE') for line in asset.read_text(encoding='utf-8', errors='replace').splitlines()):
+            raise ValueError('Nested asset INCLUDE needs an explicit dependency plan')
+        assets.append((asset, relative, digest(asset)))
+    output_parameter = process.get('output_directory_parameter')
+    if output_parameter is not None and (not isinstance(output_parameter, str) or not output_parameter or output_parameter == input_parameter):
+        raise ValueError('Invalid output_directory_parameter')
     baseline = definition_hashes(root)
     source_hash, gh_hash = digest(source), digest(gh)
     run_id = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ-') + uuid.uuid4().hex[:12]
@@ -190,17 +218,38 @@ def execute(root, process_id, input_file, config_file, prepare_only=False):
         # The solver can modify its own copy without changing the input snapshot.
         solver_dir = run / 'work' / 'solver'
         solver_dir.mkdir()
-        solver_input = solver_dir / 'input.k'
+        solver_input = solver_dir / input_relative
+        solver_input.parent.mkdir(parents=True, exist_ok=True)
+        result_dir = solver_dir / result_relative
+        result_dir.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(run / 'input' / source.name, solver_input)
+        manifest['asset_snapshots'] = []
+        for asset, relative, asset_hash in assets:
+            snapshot = run / 'input' / 'assets' / relative
+            target = solver_dir / relative
+            if not contained(solver_dir, target) or not contained(run / 'input/assets', snapshot):
+                raise ValueError('Asset path escapes run')
+            snapshot.parent.mkdir(parents=True, exist_ok=True)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(asset, snapshot)
+            shutil.copyfile(snapshot, target)
+            if digest(snapshot) != asset_hash or digest(target) != asset_hash:
+                raise ValueError('Asset changed while copying')
+            manifest['asset_snapshots'].append({'source':str(asset), 'destination':relative, 'sha256':asset_hash})
+        manifest.update(solver_input=str(solver_input), solver_result_directory=str(result_dir),
+                        raw_result_directory=str(run / 'raw/solver'), server_timeout_recommended_seconds=timeout + 60)
         write_json(run / 'exchange' / 'definition-hashes.json', baseline)
         write_json(run / 'exchange' / 'process.json', process)
         manifest['status'] = 'prepared'
         if prepare_only:
             return run, manifest
+        if process.get('requires_run_relative_output') and not settings.get('run_relative_output_confirmed', False):
+            raise ValueError('GH output is not confirmed run-relative; preparation only until GH is updated')
         with lock.open('x', encoding='utf-8') as stream:
             json.dump({'run_id': run_id, 'run_directory': str(run)}, stream)
         lock_owned = True
-        passed_input, alias = execution_path(solver_dir, run_id, config.get('execution_path_alias_root'))
+        _, alias = execution_path(solver_dir, run_id, config.get('execution_path_alias_root'))
+        passed_input = (Path(alias) if alias else solver_dir) / input_relative
         manifest['solver_input'] = str(solver_input)
         manifest['gh_input_path'] = str(passed_input)
         manifest['execution_path_alias'] = alias
@@ -212,13 +261,20 @@ def execute(root, process_id, input_file, config_file, prepare_only=False):
         if io.get('Errors') or io.get('errors'):
             raise ValueError('Compute could not load the GH definition; see io-response.json')
         names = io.get('InputNames', [x.get('Name') for x in io.get('Inputs', [])])
-        if names != [input_parameter]:
-            raise ValueError('This version requires one exposed file-path input matching the process definition')
-        if definition_hashes(root) != baseline or digest(source) != source_hash or digest(gh) != gh_hash:
+        expected_names = [input_parameter] + ([output_parameter] if output_parameter else [])
+        if len(names) != len(expected_names) or set(names) != set(expected_names):
+            raise ValueError('GH exposed inputs do not match the configured path inputs')
+        if definition_hashes(root) != baseline or digest(source) != source_hash or digest(gh) != gh_hash or any(digest(a) != h for a, _, h in assets):
             raise ValueError('Definition or original input changed before solve')
         payload['values'] = [{'ParamName': input_parameter, 'InnerTree': {'{0}': [
             {'type': 'System.String', 'data': json.dumps(str(passed_input), ensure_ascii=False)}
         ]}}]
+        if output_parameter:
+            passed_output = (Path(alias) if alias else solver_dir) / result_relative
+            manifest['gh_output_directory'] = str(passed_output)
+            payload['values'].append({'ParamName': output_parameter, 'InnerTree': {'{0}': [
+                {'type': 'System.String', 'data': json.dumps(str(passed_output), ensure_ascii=False)}
+            ]}})
         write_json(run / 'exchange' / 'solve-request.json', payload)
         manifest['status'] = 'running'
         write_json(manifest_file, manifest)
@@ -230,10 +286,15 @@ def execute(root, process_id, input_file, config_file, prepare_only=False):
         manifest.update(status='succeeded', success_basis='gh_response_received',
                         gh_errors=result.get('errors', []), gh_warnings=result.get('warnings', []))
         # Preserve all files produced beside the execution copy, without following links.
-        if any(p.is_symlink() or (hasattr(p, 'is_junction') and p.is_junction()) for p in solver_dir.rglob('*')):
+        if any(p.is_symlink() or (hasattr(p, 'is_junction') and p.is_junction()) for p in result_dir.rglob('*')):
             manifest['post_status'] = 'error'
             raise ValueError('Solver output contains links; refusing to copy outside the run')
-        shutil.copytree(solver_dir, run / 'raw' / 'solver')
+        shutil.copytree(result_dir, run / 'raw' / 'solver')
+        # Include dependencies remain beside raw/solver for standalone inspection.
+        for asset, relative, asset_hash in assets:
+            snapshot = run / 'input/assets' / relative
+            if relative not in ('.', '') and Path(relative).parent == Path('.') and result_relative != '.':
+                shutil.copyfile(snapshot, run / 'raw' / Path(relative).name)
         write_json(run / 'exchange' / 'raw-hashes.json', {
             str(p.relative_to(run / 'raw')): digest(p) for p in (run / 'raw').rglob('*') if p.is_file()
         })
@@ -248,7 +309,7 @@ def execute(root, process_id, input_file, config_file, prepare_only=False):
         (run / 'logs' / 'error.txt').write_text(manifest['error'], encoding='utf-8')
     finally:
         try:
-            unchanged = definition_hashes(root) == baseline and digest(source) == source_hash and digest(gh) == gh_hash
+            unchanged = definition_hashes(root) == baseline and digest(source) == source_hash and digest(gh) == gh_hash and all(digest(a) == h and digest(run / 'input/assets' / r) == h for a, r, h in assets)
         except OSError:
             unchanged = False
         if not unchanged:

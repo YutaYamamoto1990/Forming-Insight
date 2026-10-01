@@ -1,0 +1,21 @@
+$# LS-PrePost command file created by LS-PrePost(R) V4.8.29 - 05Apr2022 -64bit-Window
+$# Created on Sep-24-2026 (13:44:32)
+openc d3plot "E:\Develop\260918_Lab_FormingInsight_process01\hemi.draw.k\d3plot"
+isometric z
+ac
+-M 5
+state -1;
+ac
+fringe 7
+pfringe
+print png "E:\Develop\260918_Lab_FormingInsight_process01\hemi.draw.k\image_000.png" opaque enlisted "OGL1x1" 
+-M 4
+-M 3
+-M 2
+ac
+print png "E:\Develop\260918_Lab_FormingInsight_process01\hemi.draw.k\image_001.png" opaque enlisted "OGL1x1" 
+top
+print png "E:\Develop\260918_Lab_FormingInsight_process01\hemi.draw.k\image_002.png" opaque enlisted "OGL1x1" 
+right
+right
+print png "E:\Develop\260918_Lab_FormingInsight_process01\hemi.draw.k\image_003.png" opaque enlisted "OGL1x1" 

@@ -4,8 +4,9 @@
   "api_key_environment": null,
   "execution_path_alias_root": null,
   "processes": {
-    "process-test": {
-      "gh_definition": null
-    }
-  }
+    "process-test": {},
+    "press-z": {}
+  },
+  "lsprepost_executable": null,
+  "post_timeout_seconds": 600
 }

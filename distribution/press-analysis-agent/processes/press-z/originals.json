@@ -1,0 +1,36 @@
+{
+  "snapshot_date": "2026-09-25",
+  "description": "Initial copy provenance; hashes describe this snapshot, not future user edits.",
+  "files": [
+    {
+      "path": "gh/process_press-z.gh",
+      "sha256": "1de5a771acdadbdfdc49980df376b07776e25ac6c4ed3d768efbeb59e7e49f65",
+      "source_filename": "process_press-z.gh"
+    },
+    {
+      "path": "assets/cal_setup.k",
+      "sha256": "107483039660916a3c2dececada3a44dff5b6bd5200410264714f248b89e9abf",
+      "source_filename": "cal_setup.k"
+    },
+    {
+      "path": "post/lspost.cfile",
+      "sha256": "5832cd155b095e1d0e683f2fa4735603e3d49ee701d7a3596b27ea16b4289be3",
+      "source_filename": "lspost.cfile"
+    },
+    {
+      "path": "post/press_z_post.cfile",
+      "sha256": "c64e959e4d5ae1ebda1807d1e7ad24bd43f6308ea8b2493df354aadc48022f0b",
+      "source_filename": "press_z_post.cfile"
+    }
+  ],
+  "updates": [
+    {
+      "date": "2026-09-28",
+      "path": "gh/process_press-z.gh",
+      "source_filename": "process_press-z.gh",
+      "previous_sha256": "1de5a771acdadbdfdc49980df376b07776e25ac6c4ed3d768efbeb59e7e49f65",
+      "sha256": "7904e210774a8e0c067e2bfde77973804e68fc9663ca3d7b9bf3da974c9c7594",
+      "validation": "Copy hash verified; GH not executed"
+    }
+  ]
+}

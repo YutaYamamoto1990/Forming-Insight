@@ -42,6 +42,8 @@ class RunnerTests(unittest.TestCase):
                     if case.behavior == 'definition_change':
                         (case.root / 'AGENTS.md').write_text('changed', encoding='utf-8')
                     body = {'InputNames': ['Get File Path'], 'Errors': []}
+                    if case.behavior == 'two_inputs':
+                        body['InputNames'] = ['Output Directory', 'Get File Path']
                 else:
                     if case.behavior == 'timeout':
                         time.sleep(0.35)
@@ -52,7 +54,12 @@ class RunnerTests(unittest.TestCase):
                         return
                     item = value['values'][0]['InnerTree']['{0}'][0]
                     copied_input = Path(json.loads(item['data']))
-                    (copied_input.parent / 'result.bin').write_bytes(b'raw result')
+                    output = copied_input.parent
+                    if case.behavior == 'two_inputs':
+                        item = value['values'][1]['InnerTree']['{0}'][0]
+                        output = Path(json.loads(item['data']))
+                        case.output_received = output
+                    (output / 'result.bin').write_bytes(b'raw result')
                     self.assert_no_cache = value['cachesolve'] is False
                     body = {'values': [], 'errors': ['opaque GH warning treated per user policy'], 'warnings': []}
                 self.send_response(200)
@@ -103,6 +110,45 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(manifest['status'], 'prepared')
         self.assertEqual(self.requests, [])
         self.assertEqual((run / 'input/input.k').read_bytes(), self.source.read_bytes())
+
+    def test_two_inputs_route_results_and_preserve_include(self):
+        self.behavior = 'two_inputs'
+        asset = self.root / 'cal_setup.k'
+        asset.write_text('*KEYWORD\n*END\n')
+        process = runner.read_json(self.process_dir / 'process.json')
+        process.update(output_directory_parameter='Output Directory',
+                       layout={'input_file':'input_shape/input.k','result_directory':'input_run'},
+                       assets=[{'id':'cal_setup','source':str(asset),'destination':'cal_setup.k'}])
+        runner.write_json(self.process_dir / 'process.json', process)
+        run, manifest = self.run_case()
+        self.assertEqual('succeeded', manifest['status'])
+        self.assertEqual(run/'work/solver/input_run', self.output_received)
+        self.assertEqual(b'raw result', (run/'raw/solver/result.bin').read_bytes())
+        self.assertEqual(asset.read_bytes(), (run/'raw/cal_setup.k').read_bytes())
+
+    def test_process_layout_assets_timeout_and_execution_gate(self):
+        asset = self.root / 'cal_setup.k'
+        asset.write_text('*KEYWORD\n*END\n')
+        process = runner.read_json(self.process_dir / 'process.json')
+        process.update(timeout_seconds=1200, requires_run_relative_output=True,
+                       layout={'input_file':'input_shape/input.k','result_directory':'input_run'},
+                       assets=[{'id':'cal_setup','source':str(asset),'destination':'cal_setup.k'}])
+        runner.write_json(self.process_dir / 'process.json', process)
+        run, manifest = self.run_case(True)
+        self.assertEqual(1200, manifest['timeout_seconds'])
+        self.assertEqual(1260, manifest['server_timeout_recommended_seconds'])
+        self.assertEqual(asset.read_bytes(), (run/'work/solver/cal_setup.k').read_bytes())
+        self.assertEqual(asset.read_bytes(), (run/'input/assets/cal_setup.k').read_bytes())
+        self.assertTrue((run/'work/solver/input_run').is_dir())
+        self.assertEqual(self.source.read_bytes(), (run/'work/solver/input_shape/input.k').read_bytes())
+        _, blocked = self.run_case()
+        self.assertEqual('failed_before_solve', blocked['status'])
+        self.assertEqual([], self.requests)
+        config = runner.read_json(self.config)
+        config['processes'] = {'test':{'timeout_seconds':1500}}
+        runner.write_json(self.config, config)
+        _, override = self.run_case(True)
+        self.assertEqual(1500, override['timeout_seconds'])
 
     def test_http_failure_is_unknown_and_blocks_accidental_retry(self):
         self.behavior = 'http_error'

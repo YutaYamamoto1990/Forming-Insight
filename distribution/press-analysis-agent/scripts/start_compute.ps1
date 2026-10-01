@@ -1,11 +1,27 @@
 param(
     [Parameter(Mandatory = $true)][string]$ComputeExe,
     [ValidateRange(1024, 65535)][int]$Port = 6500,
-    [ValidateRange(1, 86400)][int]$ServerTimeoutSeconds = 660
+    [ValidateRange(1, 86400)][int]$ServerTimeoutSeconds = 660,
+    [string]$ProcessId,
+    [string]$ConfigFile
 )
 
 $ErrorActionPreference = 'Stop'
 $agentRoot = Split-Path $PSScriptRoot -Parent
+if ($ProcessId) {
+    if ($ProcessId -notmatch '^[a-z0-9][a-z0-9-]*$') { throw 'Invalid process id' }
+    $definition = Get-Content -LiteralPath (Join-Path $agentRoot "processes/$ProcessId/process.json") -Raw | ConvertFrom-Json
+    if (-not $ConfigFile) { $ConfigFile = Join-Path $agentRoot 'config/user-config.json' }
+    $configuration = Get-Content -LiteralPath $ConfigFile -Raw | ConvertFrom-Json
+    $clientTimeout = 600
+    if ($null -ne $configuration.timeout_seconds) { $clientTimeout = $configuration.timeout_seconds }
+    if ($null -ne $definition.timeout_seconds) { $clientTimeout = $definition.timeout_seconds }
+    if ($null -ne $configuration.processes.$ProcessId.timeout_seconds) { $clientTimeout = $configuration.processes.$ProcessId.timeout_seconds }
+    if ($clientTimeout -is [bool] -or $clientTimeout -le 0) { throw 'Invalid client timeout' }
+    $requiredTimeout = [int][math]::Ceiling($clientTimeout + 60)
+    if ($PSBoundParameters.ContainsKey('ServerTimeoutSeconds') -and $ServerTimeoutSeconds -lt $requiredTimeout) { throw 'Server timeout must exceed process timeout by at least 60 seconds' }
+    $ServerTimeoutSeconds = [math]::Max($ServerTimeoutSeconds, $requiredTimeout)
+}
 $computePath = (Resolve-Path -LiteralPath $ComputeExe).Path
 if ([IO.Path]::GetFileName($computePath) -ne 'rhino.compute.exe') {
     throw 'Specify the installed Rhino 8 Hops rhino.compute.exe.'

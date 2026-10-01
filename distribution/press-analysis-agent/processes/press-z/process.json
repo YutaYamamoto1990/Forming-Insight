@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "description": "Input shape to generated input_run deck with cal_setup include",
+  "gh_definition": "processes/press-z/gh/process_press-z.gh",
+  "input_parameter": "Get File Path_input shape",
+  "output_parameter": "Tx",
+  "success_policy": "gh_response_received",
+  "timeout_seconds": 1200,
+  "layout": {
+    "input_file": "input_shape/input.k",
+    "result_directory": "input_run"
+  },
+  "assets": [
+    {
+      "id": "cal_setup",
+      "source": "processes/press-z/assets/cal_setup.k",
+      "destination": "cal_setup.k"
+    }
+  ],
+  "output_directory_parameter": "Get File Path_cal directory",
+  "postprocess": {
+    "cfile": "processes/press-z/post/press_z_post.cfile",
+    "expected_images": [
+      "image_000_before.png",
+      "image_000_after.png",
+      "image_000_after_plastic_strain.png",
+      "image_1.png"
+    ]
+  }
+}

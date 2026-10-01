@@ -43,7 +43,7 @@ python scripts/run_analysis.py --process process-test --input 'E:/data/model.k'
 | `integrity_error` | 定義または入力の変更を検出。正常完了とせず、復元や上書きをしない |
 | `preparing` / `checking_connection` / `running` | 途中状態。プロセスが終了済みでも成功を推定しない |
 
-`post_status` も確認する。`error` / `blocked` はGHの成功と分けて伝え、`pending_implementation` はポスト処理未実装を意味する。`gh_errors`・`gh_warnings` があれば隠さず報告するが、応答受信を成功とする利用者指定の基準を独自に変更しない。
+`post_status` も確認する。`error` / `blocked` はGHの成功と分けて伝え、`pending_implementation` はRawのみのrunnerが後続処理を実行していないことを意味する。`gh_errors`・`gh_warnings` があれば隠さず報告するが、応答受信を成功とする利用者指定の基準を独自に変更しない。
 
 結果案内は `raw/solver/` を実際に列挙して行う。`d3plot` が存在する場合はその絶対パスと同じフォルダーの分割ファイルを案内する。存在しない結果は生成済みと説明しない。ファイル不足はGH応答の有無と分けて伝え、空ファイル等で補わない。
 
@@ -51,4 +51,26 @@ python scripts/run_analysis.py --process process-test --input 'E:/data/model.k'
 
 ## 現在の到達点
 
-このSkillの自動フローはRaw保存と結果案内まで。別途依頼されたHTMLレポートの作成には [レポート記載基準](../../../docs/report-guidelines.md) と `scripts/render_report.py` を使用できる。専門知識による評価、数値抽出、ポスト処理の自動連結は未実装。未整備の評価基準で良否を断定しない。将来の拡張や配布方法は [README.md](../../../README.md) を参照する。
+Rawのみのrunnerに加え、以下のパイプラインで画像出力と下書き作成まで進められる。別途依頼されたHTMLレポートの作成には [レポート記載基準](../../../docs/report-guidelines.md) と `scripts/render_report.py` を使用できる。専門知識による評価基準とRaw数値抽出は未整備。未整備の評価基準で良否を断定しない。将来の拡張や配布方法は [README.md](../../../README.md) を参照する。
+
+
+## 画像出力・レポートまでの依頼
+
+ポスト処理が設定済みのプロセスでは `scripts/run_pipeline.py --process <id> --input <path>` を使う。準備のみ・Rawのみの依頼は既存のrun_analysis.pyを使う。必要設定は `lsprepost_executable`、`post_timeout_seconds`、`processes.<id>.postprocess.cfile`。期待する画像名はprocess.jsonに置く。cfileはprocess.jsonの同梱原本を既定とし、configで任意に上書きできる。
+
+パイプラインはGHを1回実行し、Raw保存後にcfileの作業コピーを実行する。ポスト処理は `.post.lock` で直列化し、タイムアウト後は状態未確定としてロックを残す。自動再実行・強制終了・ロック削除はしない。登録cfileのコマンドはLS-PrePostに任せる。スクリプトはd3plot入力とPNG出力パスを置換し、それ以外を保持する。他のファイル参照は自動置換しない。置換不能な入出力形式や画像名の不一致は実行前に停止する。
+
+終了JSONのrun_directoryを確認する。post_statusがsucceededでも、report_statusがawaiting_agent_reviewなら下書きである。生成PNGを実際に閲覧し、表示項目・時刻・凡例・分布を確認する。下書きのreport-data.jsonをreport内へ別名コピーし、観察、解釈、提案、未確認事項を記述する。画像の確認前に観察内容を推測しない。必要な専門資料のみ参照し、未整備なら良否未評価と明記する。
+
+[レポート記載基準](../../../docs/report-guidelines.md) に従って別report-idへrender_report.pyで生成し、表示を確認する。レビュー完了はreport内のreview.jsonにレポートパス・確認範囲・未評価事項を記録する。出典ハッシュを保つため、レポート生成後に参照済みのexchange/run.jsonを更新しない。下書きを最終レポートと呼ばない。
+
+
+## プロセス別の配置と待機
+
+`press-z` は [配置契約](../../../processes/press-z/README.md) を参照する。形状入力、実行用k、include資材はrunnerがrun内へ配置する。利用者の原本フォルダーでGHを直接実行しない。requires_run_relative_outputが設定されたプロセスでは、GHの固定出力先が解消したことを確認してからrun_relative_output_confirmedを設定する。単に実行エラーを回避する目的でtrueにしない。
+
+待機時間はプロセス別に解決され、press-zは1200秒。Computeの起動スクリプトに-ProcessIdを渡してサーバー待機も対応させる。press-zはpress_z_post.cfileによるPNG4枚の出力条件を登録済み。画像・レポートまで依頼された場合はrun_pipeline.pyを使用する。
+
+## 明示的なプロセス追加・編集
+
+配布後も利用者が依頼した場合は `processes/` のGH・固定資材・cfile・process.jsonを追加・編集できる。[プロセス管理](../../../processes/README.md) に従い、解析実行とは別に行う。解析中の定義ハッシュ保護は維持し、通常の解析依頼から原本の自己更新を行わない。
